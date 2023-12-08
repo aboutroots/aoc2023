@@ -7,7 +7,7 @@ def file_to_lines(day, separate_with_empty=False, strip_lines=True):
     if not separate_with_empty:
         with open(filename, "r") as file:
             lines = file.readlines()
-        return lines
+        return lines if not strip_lines else [line.strip() for line in lines]
 
     with open(filename, "r") as file:
         # row may consist of data from multiple lines
@@ -28,3 +28,33 @@ def file_to_lines(day, separate_with_empty=False, strip_lines=True):
             lines.append(row_joined)
 
         return lines
+
+
+def get_adjacent(center_x, center_y, matrix, n=8):
+    """Get points adjacent to the given point on matrix. N can be 4 or 8
+
+    :return: generator of tuples (x, y, value)
+    """
+    neighbours = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+    if n == 8:
+        neighbours = [
+            (-1, 0),
+            (-1, 1),
+            (0, 1),
+            (1, 1),
+            (1, 0),
+            (1, -1),
+            (0, -1),
+            (-1, -1),
+        ]
+
+    for directions in neighbours:
+        next_x = center_x + directions[0]
+        next_y = center_y + directions[1]
+        if next_x < 0 or next_y < 0:
+            continue
+        try:
+            item_at_index = matrix[next_y][next_x]
+        except IndexError:
+            continue
+        yield (next_x, next_y, item_at_index)
