@@ -58,3 +58,9 @@ def get_adjacent(center_x, center_y, matrix, n=8):
         except IndexError:
             continue
         yield (next_x, next_y, item_at_index)
+
+
+def chunks(xs, n):
+    """Split list into chunks of size n"""
+    n = max(1, n)
+    return (xs[i : i + n] for i in range(0, len(xs), n))
