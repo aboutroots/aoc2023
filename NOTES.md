@@ -10,4 +10,7 @@
 ## Day 5 and 6
 - Instead of working on full ranges, maybe you can work only on range boundaries (intervals).
 - When transforming range boundaries, the range can split into 1-2 additional ranges (intervals).
-- The input to exercise might have some additional rules that make it easier: for example, can be alphabetically sorted or some parts can be exclusive so you dont have to worry about it.
+- The input to exercise might have some additional rules that make it easier: for example, can be alphabetically sorted or some parts can be exclusive so you dont have to worry about it. YOU DONT NEED A GENERIC SOLUTION
+## Day 8
+- If you have multiple cycles (and cycles within cycles) you probably want LCM .
+- Observe if LCM works on test input and also check if cycle from A-Z is the same as Z-A. If yes, you can use LCM
