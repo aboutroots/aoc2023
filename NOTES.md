@@ -7,3 +7,7 @@
 -  -index in python will start index from the end! This might be not what you want
 - Check indexes for off-by-one error
 - properly parse values from the edges of the map
+## Day 5 and 6
+- Instead of working on full ranges, maybe you can work only on range boundaries (intervals).
+- When transforming range boundaries, the range can split into 1-2 additional ranges (intervals).
+- The input to exercise might have some additional rules that make it easier: for example, can be alphabetically sorted or some parts can be exclusive so you dont have to worry about it.
