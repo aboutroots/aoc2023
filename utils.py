@@ -64,3 +64,13 @@ def chunks(xs, n):
     """Split list into chunks of size n"""
     n = max(1, n)
     return (xs[i : i + n] for i in range(0, len(xs), n))
+
+
+def transpose(matrix):
+    """Transpose matrix"""
+    result = [[None for _ in range(len(matrix))] for _ in range(len(matrix[0]))]
+    for i in range(len(matrix)):
+        # iterate through columns
+        for j in range(len(matrix[0])):
+            result[j][i] = matrix[i][j]
+    return result

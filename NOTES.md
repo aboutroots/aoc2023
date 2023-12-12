@@ -14,3 +14,6 @@
 ## Day 8
 - If you have multiple cycles (and cycles within cycles) you probably want LCM .
 - Observe if LCM works on test input and also check if cycle from A-Z is the same as Z-A. If yes, you can use LCM
+## Day 11
+- When comparing every item with every item, make sure to not compare them twice.
+- Distance on rectangular map is a sum of distance on Y axis and distance on X axis
