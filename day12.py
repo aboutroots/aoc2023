@@ -33,11 +33,11 @@ def get_pattern_groups_hidden(rules):
 def get_known_groups_of_hashes(hidden_spring):
     result = []
     current_subgroup = 0
-    for idx, elem in enumerate(hidden_spring):
+    for elem in hidden_spring:
         if elem == "?":
-            if current_subgroup > 0:
-                result.append(current_subgroup)
-            return result, idx
+            # if current_subgroup > 0:
+            #     result.append(current_subgroup)
+            return result
         if elem == "#":
             current_subgroup += 1
         if elem == ".":
@@ -46,16 +46,24 @@ def get_known_groups_of_hashes(hidden_spring):
                 current_subgroup = 0
     if current_subgroup > 0:
         result.append(current_subgroup)
-    return result, idx
+    return result
 
 
 def is_valid_hidden_spring(hidden_spring, pattern):
     return re.match(pattern, hidden_spring) is not None
 
 
+def find_index_to_left(lst, curr_index, condition):
+    for i in range(curr_index - 1, -1, -1):
+        if condition(lst[i]):
+            return i
+    return None  # Return 0 if not found
+
+
 def generate_springs(
     hidden_spring, pattern_strict, pattern_hidden, req_n_hashes, group
 ):
+    # print(hidden_spring, req_n_hashes, group)
     unknown_index = hidden_spring.find("?")
     if unknown_index == -1:
         if is_valid(hidden_spring, req_n_hashes, pattern_strict):
@@ -69,50 +77,104 @@ def generate_springs(
     use_dot = True
     use_hash = True
 
-    known_groups_of_hashes, q_idx = get_known_groups_of_hashes(hidden_spring)
+    known_groups_of_hashes = get_known_groups_of_hashes(hidden_spring)
     if len(known_groups_of_hashes) > len(group):
         return 0
 
     unfinished_group = False
     rules_remaining = []
-    for known_group, rule in zip_longest(known_groups_of_hashes, group):
+    for idx, (known_group, rule) in enumerate(
+        zip_longest(known_groups_of_hashes, group)
+    ):
         if known_group != rule:
-            rules_remaining.append(rule)
+            rules_remaining = group[idx:]
+            break
 
-    # print(known_groups_of_hashes, group)
-    for idx, rule in enumerate(known_groups_of_hashes):
-        if group[idx] == rule:
-            continue
-        elif group[idx] > rule:
-            unfinished_group = True
+    if len(rules_remaining) == 0:
+        rules_remaining = group
 
-    # if unfinished group, next must be '#'
-    use_dot = not unfinished_group
+    # # print(known_groups_of_hashes, group)
+    # for idx, rule in enumerate(known_groups_of_hashes):
+    #     if group[idx] > rule:
+    #         unfinished_group = True
 
-    if not unfinished_group and unknown_index > 0:
-        prev_char = hidden_spring[unknown_index - 1]
-        if prev_char == "#":
-            use_hash = False
-            # this means that we just finished a group, next must be '.'
+    # # if unfinished group, next must be '#'
+    # use_dot = not unfinished_group
+
+    # if not unfinished_group and unknown_index > 0:
+    #     prev_char = hidden_spring[unknown_index - 1]
+    #     if prev_char == "#":
+    #         use_hash = False
+    #         # this means that we just finished a group, next must be '.'
+
+    # import ipdb
+
+    # ipdb.set_trace()
+
+    # find the new start index. This is the indeex that must be a first # in a group
+    # of ### preceeding the unknown index
+    new_start_index = find_index_to_left(
+        hidden_spring, unknown_index, lambda x: x != "#"
+    )
+    if new_start_index is None:
+        new_start_index = 0
+    elif new_start_index != unknown_index:
+        new_start_index += 1
+    # print(new_start_index, unknown_index, hidden_spring)
+    import ipdb
+
+    # ipdb.set_trace()
 
     # first option:
     if use_hash:
         new_hidden_spring = (
-            hidden_spring[:unknown_index] + "#" + hidden_spring[unknown_index + 1 :]
+            hidden_spring[new_start_index:unknown_index]
+            + "#"
+            + hidden_spring[unknown_index + 1 :]
         )
-        if is_valid_hidden_spring(new_hidden_spring, pattern_hidden):
+        # print(
+        #     " ",
+        #     " " * (len(hidden_spring) - len(new_hidden_spring)),
+        #     new_hidden_spring,
+        # )
+        new_pattern_hidden = get_pattern_groups_hidden(rules_remaining)
+        new_pattern_strict = get_pattern_groups_strict(rules_remaining)
+        new_req_n_hashes = sum(rules_remaining)
+        if is_valid_hidden_spring(new_hidden_spring, new_pattern_hidden):
+            # print("valid", new_hidden_spring)
             new_springs += generate_springs(
-                new_hidden_spring, pattern_strict, pattern_hidden, req_n_hashes, group
+                new_hidden_spring,
+                new_pattern_strict,
+                new_pattern_hidden,
+                new_req_n_hashes,
+                rules_remaining,
             )
+        else:
+            pass
+            # print("invalid # ", new_hidden_spring, rules_remaining)
     # second_option
     if use_dot:
         new_hidden_spring = (
-            hidden_spring[:unknown_index] + "." + hidden_spring[unknown_index + 1 :]
+            hidden_spring[new_start_index:unknown_index]
+            + "."
+            + hidden_spring[unknown_index + 1 :]
         )
-        if is_valid_hidden_spring(new_hidden_spring, pattern_hidden):
+        new_pattern_hidden = get_pattern_groups_hidden(rules_remaining)
+        new_pattern_strict = get_pattern_groups_strict(rules_remaining)
+        new_req_n_hashes = sum(rules_remaining)
+        if is_valid_hidden_spring(new_hidden_spring, new_pattern_hidden):
+            # print("valid", new_hidden_spring)
             new_springs += generate_springs(
-                new_hidden_spring, pattern_strict, pattern_hidden, req_n_hashes, group
+                new_hidden_spring,
+                new_pattern_strict,
+                new_pattern_hidden,
+                new_req_n_hashes,
+                rules_remaining,
             )
+        else:
+            pass
+
+            # print("invalid . ", new_hidden_spring, rules_remaining)
     return new_springs
     # return [x for x in new_springs if is_valid(x, rules)]
 
@@ -121,11 +183,11 @@ def solve(rows):
     profiler = cProfile.Profile()
     profiler.enable()
     arrangements = 0
+    multiplier = 5
     for idx, row in enumerate(rows):
-        print(idx)
         spring, rules = row.split(" ")
-        rules = [int(x) for x in rules.split(",")] * 5
-        spring = "?".join([spring] * 5)
+        rules = [int(x) for x in rules.split(",")] * multiplier
+        spring = "?".join([spring] * multiplier)
         new_springs = generate_springs(
             spring,
             get_pattern_groups_strict(rules),
@@ -133,12 +195,12 @@ def solve(rows):
             req_n_hashes=sum(rules),
             group=rules,
         )
-        # print(idx, len(new_springs))
+        print(idx, new_springs)
         arrangements += new_springs
     print(arrangements)
     profiler.disable()
 
-    profiler.print_stats(sort="cumulative")
+    # profiler.print_stats(sort="cumulative")
 
 
 if __name__ == "__main__":
