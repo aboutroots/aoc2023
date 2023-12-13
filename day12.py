@@ -1,4 +1,5 @@
 from itertools import zip_longest
+from venv import create
 from utils import file_to_lines
 import re
 import cProfile
@@ -49,7 +50,10 @@ def get_known_groups_of_hashes(hidden_spring):
     return result
 
 
-def is_valid_hidden_spring(hidden_spring, pattern):
+def is_valid_hidden_spring(hidden_spring, pattern, req_n_hashes=None):
+    if hidden_spring.count("#") > req_n_hashes:
+        return False
+
     return re.match(pattern, hidden_spring) is not None
 
 
@@ -61,12 +65,21 @@ def find_index_to_left(lst, curr_index, condition):
 
 
 def generate_springs(
-    hidden_spring, pattern_strict, pattern_hidden, req_n_hashes, group
+    hidden_spring,
+    pattern_strict,
+    pattern_hidden,
+    req_n_hashes,
+    group,
+    level,
+    prev_parts,
 ):
-    # print(hidden_spring, req_n_hashes, group)
+    print("{:>20}".format(hidden_spring), group)
     unknown_index = hidden_spring.find("?")
-    if unknown_index == -1:
+    if unknown_index == -1 or len(group) == 0:
+        # print(" " * level, "return", "".join(prev_parts) + hidden_spring)
+        # return 1
         if is_valid(hidden_spring, req_n_hashes, pattern_strict):
+            print(" " * level, "valid", "".join(prev_parts) + hidden_spring)
             return 1
         else:
             return 0
@@ -78,8 +91,8 @@ def generate_springs(
     use_hash = True
 
     known_groups_of_hashes = get_known_groups_of_hashes(hidden_spring)
-    if len(known_groups_of_hashes) > len(group):
-        return 0
+    # if len(known_groups_of_hashes) > len(group):
+    #     return 0
 
     unfinished_group = False
     rules_remaining = []
@@ -127,63 +140,81 @@ def generate_springs(
 
     # first option:
     if use_hash:
-        new_hidden_spring = (
-            hidden_spring[new_start_index:unknown_index]
-            + "#"
-            + hidden_spring[unknown_index + 1 :]
+        new_springs += create_new(
+            "#",
+            level,
+            hidden_spring,
+            unknown_index,
+            rules_remaining,
+            new_start_index,
+            prev_parts,
         )
-        # print(
-        #     " ",
-        #     " " * (len(hidden_spring) - len(new_hidden_spring)),
-        #     new_hidden_spring,
-        # )
-        new_pattern_hidden = get_pattern_groups_hidden(rules_remaining)
-        new_pattern_strict = get_pattern_groups_strict(rules_remaining)
-        new_req_n_hashes = sum(rules_remaining)
-        if is_valid_hidden_spring(new_hidden_spring, new_pattern_hidden):
-            # print("valid", new_hidden_spring)
-            new_springs += generate_springs(
-                new_hidden_spring,
-                new_pattern_strict,
-                new_pattern_hidden,
-                new_req_n_hashes,
-                rules_remaining,
-            )
-        else:
-            pass
-            # print("invalid # ", new_hidden_spring, rules_remaining)
     # second_option
     if use_dot:
-        new_hidden_spring = (
-            hidden_spring[new_start_index:unknown_index]
-            + "."
-            + hidden_spring[unknown_index + 1 :]
+        new_springs += create_new(
+            ".",
+            level,
+            hidden_spring,
+            unknown_index,
+            rules_remaining,
+            new_start_index,
+            prev_parts,
         )
-        new_pattern_hidden = get_pattern_groups_hidden(rules_remaining)
-        new_pattern_strict = get_pattern_groups_strict(rules_remaining)
-        new_req_n_hashes = sum(rules_remaining)
-        if is_valid_hidden_spring(new_hidden_spring, new_pattern_hidden):
-            # print("valid", new_hidden_spring)
-            new_springs += generate_springs(
-                new_hidden_spring,
-                new_pattern_strict,
-                new_pattern_hidden,
-                new_req_n_hashes,
-                rules_remaining,
-            )
-        else:
-            pass
 
-            # print("invalid . ", new_hidden_spring, rules_remaining)
+        # print("invalid . ", new_hidden_spring, rules_remaining)
     return new_springs
     # return [x for x in new_springs if is_valid(x, rules)]
+
+
+def create_new(
+    c, level, hidden_spring, unknown_index, rules_remaining, new_start_index, prev_parts
+):
+    new_hidden_spring = (
+        hidden_spring[new_start_index:unknown_index]
+        + c
+        + hidden_spring[unknown_index + 1 :]
+    )
+    prev_part = hidden_spring[:new_start_index]
+    # print(
+    #     " ",
+    #     " " * (len(hidden_spring) - len(new_hidden_spring)),
+    #     new_hidden_spring,
+    # )
+    new_pattern_hidden = get_pattern_groups_hidden(rules_remaining)
+    new_pattern_strict = get_pattern_groups_strict(rules_remaining)
+    new_req_n_hashes = sum(rules_remaining)
+    print(new_hidden_spring)
+    if is_valid_hidden_spring(new_hidden_spring, new_pattern_hidden, new_req_n_hashes):
+        # print("valid", new_hidden_spring)
+        # print(
+        #     " " * level,
+        #     'new hidden spring # "{}"'.format(new_hidden_spring),
+        #     rules_remaining,
+        # )
+        # if new_hidden_spring == "##??":
+        #     ipdb.set_trace()
+        if c == "#" and rules_remaining and rules_remaining[0] == 1:
+            rules_remaining = rules_remaining[1:]
+        return generate_springs(
+            new_hidden_spring,
+            new_pattern_strict,
+            new_pattern_hidden,
+            new_req_n_hashes,
+            rules_remaining,
+            level + 1,
+            [*prev_parts, prev_part],
+        )
+    else:
+        pass
+        # print("invalid # ", new_hidden_spring, rules_remaining)
+        return 0
 
 
 def solve(rows):
     profiler = cProfile.Profile()
     profiler.enable()
     arrangements = 0
-    multiplier = 5
+    multiplier = 1
     for idx, row in enumerate(rows):
         spring, rules = row.split(" ")
         rules = [int(x) for x in rules.split(",")] * multiplier
@@ -194,6 +225,8 @@ def solve(rows):
             get_pattern_groups_hidden(rules),
             req_n_hashes=sum(rules),
             group=rules,
+            level=0,
+            prev_parts=[],
         )
         print(idx, new_springs)
         arrangements += new_springs

@@ -68,9 +68,13 @@ def chunks(xs, n):
 
 def transpose(matrix):
     """Transpose matrix"""
-    result = [[None for _ in range(len(matrix))] for _ in range(len(matrix[0]))]
-    for i in range(len(matrix)):
-        # iterate through columns
-        for j in range(len(matrix[0])):
-            result[j][i] = matrix[i][j]
-    return result
+    transposed_matrix = [list(row) for row in zip(*matrix)]
+    return transposed_matrix
+
+
+def rotate_matrix_right(matrix):
+    # Transpose the matrix using zip
+    transposed_matrix = [list(row) for row in zip(*matrix)]
+    # Reverse the order of elements in each row
+    rotated_matrix = [list(reversed(row)) for row in transposed_matrix]
+    return rotated_matrix
