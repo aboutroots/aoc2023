@@ -72,9 +72,15 @@ def transpose(matrix):
     return transposed_matrix
 
 
-def rotate_matrix_right(matrix):
-    # Transpose the matrix using zip
-    transposed_matrix = [list(row) for row in zip(*matrix)]
-    # Reverse the order of elements in each row
-    rotated_matrix = [list(reversed(row)) for row in transposed_matrix]
-    return rotated_matrix
+def rotate_matrix_right(matrix, n=1):
+    for _ in range(n):
+        matrix = transpose(matrix)
+        matrix = [list(reversed(row)) for row in matrix]
+    return matrix
+
+
+def rotate_matrix_left(matrix, n=1):
+    for _ in range(n):
+        matrix = [list(row) for row in zip(*matrix)]
+        matrix = list(reversed(matrix))
+    return matrix
