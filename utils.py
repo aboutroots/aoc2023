@@ -30,7 +30,7 @@ def file_to_lines(day, separate_with_empty=False, strip_lines=True):
         return lines
 
 
-def get_adjacent(center_x, center_y, matrix, n=8):
+def get_adjacent(center_x, center_y, matrix, n=8, predicate=None):
     """Get points adjacent to the given point on matrix. N can be 4 or 8
 
     :return: generator of tuples (x, y, value)
@@ -57,7 +57,10 @@ def get_adjacent(center_x, center_y, matrix, n=8):
             item_at_index = matrix[next_y][next_x]
         except IndexError:
             continue
-        yield (next_x, next_y, item_at_index)
+        if predicate and predicate(item_at_index):
+            yield (next_x, next_y, item_at_index)
+        elif not predicate:
+            yield (next_x, next_y, item_at_index)
 
 
 def chunks(xs, n):
@@ -84,3 +87,14 @@ def rotate_matrix_left(matrix, n=1):
         matrix = [list(row) for row in zip(*matrix)]
         matrix = list(reversed(matrix))
     return matrix
+
+
+def find_elements_in_matrix(matrix, test_function, yield_value=False):
+    """Find elements in matrix that satisfy test_function"""
+    for y, row in enumerate(matrix):
+        for x, item in enumerate(row):
+            if test_function(item):
+                if yield_value:
+                    yield x, y, item
+                else:
+                    yield x, y
